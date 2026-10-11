@@ -329,9 +329,15 @@ def run_account(cfg, acc, dry_run):
     print(f"\n=== [{name}] ===")
     user_id = os.getenv(acc["user_id_env"], "").strip()
     token = os.getenv(acc["token_env"], "").strip()
-    if not dry_run and (not user_id or not token):
-        print(f"  ! {acc['user_id_env']} / {acc['token_env']} 미설정 → 건너뜀")
+    if not dry_run and not token:
+        print(f"  ! {acc['token_env']} 미설정 → 건너뜀")
         return False
+    if token and not user_id:  # 사용자 ID는 토큰으로 자동 조회
+        r = requests.get(f"{API}/me", params={"fields": "id,username", "access_token": token}, timeout=30)
+        if r.status_code != 200:
+            raise RuntimeError(f"Threads 토큰 확인 실패 {r.status_code}: {r.text[:200]}")
+        user_id = r.json()["id"]
+        print(f"  Threads 계정 확인: @{r.json().get('username')}")
 
     history = load_history(name, 200)
     mode, text, image, reply, meta = build_post(cfg, acc, history)

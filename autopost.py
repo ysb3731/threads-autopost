@@ -73,6 +73,8 @@ def ask_claude(cfg, prompt):
     if env_flag("MOCK_LLM"):
         stamp = datetime.datetime.now(KST).strftime("%H:%M:%S")
         return f"[테스트 글 {stamp}]\n{prompt.splitlines()[-3][:120]}"
+    if not os.getenv("ANTHROPIC_API_KEY", "").strip():
+        raise RuntimeError("ANTHROPIC_API_KEY 미등록 → Secrets에 Claude API 키를 넣거나, 테스트는 mock_llm=1로 실행하세요")
     import anthropic
 
     msg = anthropic.Anthropic().messages.create(

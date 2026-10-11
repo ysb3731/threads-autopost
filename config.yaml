@@ -20,7 +20,9 @@ accounts:
     token_env: THREADS_TOKEN_1
     persona: |
       초등학생 두 아이를 키우는 아빠가 생활·육아에 쓸모 있는 정보를
-      담백하게 공유하는 계정. 말투는 친근한 존댓말.
+      담백하게 공유하는 계정.
+      말투는 스레드 특유의 편한 반말 ("~더라", "~함", "~하는 중", "솔직히 ~").
+      친구한테 툭 던지듯 짧게. 존댓말·설명조 금지.
     topics:                    # 정보성 글 주제 (팔로워·신뢰도 확보용)
       - 아이 등교 준비 시간을 줄이는 아침 루틴
       - 주말 가족 나들이 짐 줄이는 팁
@@ -46,7 +48,8 @@ accounts:
       search_limit: 10
       cache_hours: 12          # 같은 키워드 재조회 간격 (API 호출 제한 대응)
       use_image: true          # 상품 이미지 함께 게시
-      link_label: "👉 상품 정보 보기"
+      link_label: "👉 상품 정보"
+      outro: "자세한 건 댓글에 둘게 👇"
       # API 키 발급 전 임시 운영용: 파트너스 사이트에서 만든 링크를 직접 등록
       manual_products: []
       #  - {name: "상품명", url: "https://link.coupang.com/a/xxxx", image: "상품 이미지 URL(선택)"}
@@ -57,6 +60,7 @@ accounts:
     token_env: THREADS_TOKEN_2
     persona: |
       자취·1인가구를 위한 살림 꿀팁과 가성비 생활템을 소개하는 계정.
+      말투는 스레드 특유의 편한 반말. 친구한테 말하듯 짧게.
     topics:
       - 자취방 공간 넓게 쓰는 법
       - 1인가구 장보기 낭비 줄이는 법
@@ -75,4 +79,5 @@ accounts:
       search_limit: 10
       cache_hours: 12
       use_image: true
-      link_label: "👉 상품 정보 보기"
+      link_label: "👉 상품 정보"
+      outro: "자세한 건 댓글에 둘게 👇"

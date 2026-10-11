@@ -105,6 +105,7 @@ def content_prompt(acc, topic, recent, body_max):
 
 [작성 규칙]
 {COMMON_RULES.format(body_max=body_max)}
+- 말투는 반드시 [계정 콘셉트]의 말투를 따를 것
 - 상품 홍보·링크 언급 금지 (순수 정보글)
 
 [최근 게시글]
@@ -143,7 +144,8 @@ def coupang_prompt(acc, product, keyword, recent, body_max):
 
 [작성 규칙]
 {COMMON_RULES.format(body_max=body_max)}
-- 직접 써봤다는 표현·가짜 후기 금지. "이런 분께 유용해요" 식의 상황 제안형으로
+- 말투는 반드시 [계정 콘셉트]의 말투를 따를 것
+- 직접 써봤다는 표현·가짜 후기 금지. "이런 상황이면 유용함" 식의 상황 제안형으로
 - 상품명에 없는 성능·성분·효과를 지어내지 말 것
 - 가격은 변동될 수 있으니 "현재 기준" 정도로만 언급하거나 생략
 - "링크 클릭", "지금 구매" 같은 직접 구매 유도 문구 금지
@@ -302,7 +304,7 @@ def build_post(cfg, acc, history):
         if product:
             text = ask_claude(cfg, coupang_prompt(acc, product, keyword, recent, body_max))
             tag = cfg.get("ad_tag", "#광고 #쿠팡파트너스")
-            outro = acc["coupang"].get("outro", "자세한 정보는 댓글에 남겨둘게요 👇")
+            outro = acc["coupang"].get("outro", "자세한 건 댓글에 둘게 👇")
             tail = f"\n\n{outro}\n{tag}"
             text = f"{text[: THREADS_MAX_CHARS - len(tail)].rstrip()}{tail}"
             link = short_link(product)

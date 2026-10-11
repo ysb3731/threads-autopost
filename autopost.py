@@ -148,6 +148,27 @@ def coupang_prompt(acc, product, keyword, recent, body_max):
 
 
 # ---------- 쿠팡 상품 선정 ----------
+def short_link(product):
+    """긴 추적 링크 → link.coupang.com/a/xxxx 단축 링크 (실패 시 원래 링크)"""
+    url = product["url"]
+    if "/a/" in url or not os.getenv("COUPANG_ACCESS_KEY"):
+        return url
+    try:
+        from urllib.parse import parse_qs, urlparse
+        q = parse_qs(urlparse(url).query)
+        page = q.get("pageKey", [product["id"]])[0]
+        item = q.get("itemId", [""])[0]
+        vendor = q.get("vendorItemId", [""])[0]
+        raw = f"https://www.coupang.com/vp/products/{page}"
+        if item and vendor:
+            raw += f"?itemId={item}&vendorItemId={vendor}"
+        short = coupang.deeplink([raw])[0]
+        return short or url
+    except Exception as e:
+        print(f"  ! 단축 링크 변환 실패, 원래 링크 사용: {e}")
+        return url
+
+
 def pick_product(acc, history):
     cp = acc.get("coupang", {})
     posted = {h.get("product_id") for h in history if h.get("product_id")}
@@ -270,11 +291,15 @@ def build_post(cfg, acc, history):
             text = ask_claude(cfg, coupang_prompt(acc, product, keyword, recent, body_max))
             tag = cfg.get("ad_tag", "#광고 #쿠팡파트너스")
             text = f"{text[: THREADS_MAX_CHARS - len(tag) - 2].rstrip()}\n\n{tag}"
-            reply = f"{acc['coupang'].get('link_label', '👉 상품 보기')}\n{product['url']}\n\n{cfg['disclosure']}"
+            link = short_link(product)
+            reply = f"{acc['coupang'].get('link_label', '👉 상품 보기')}\n{link}\n\n{cfg['disclosure']}"
+            product = {**product, "url": link}
             image = product["image"] if acc["coupang"].get("use_image", True) else None
             meta = {"product_id": product["id"], "product_name": product["name"],
                     "keyword": keyword, "link": product["url"]}
-            return mode, text, image, reply[:THREADS_MAX_CHARS], meta
+            if len(reply) > THREADS_MAX_CHARS:  # 고지 문구가 잘리면 안 되므로 게시 포기
+                raise RuntimeError(f"링크 댓글이 {len(reply)}자로 너무 김 (고지 문구 보호)")
+            return mode, text, image, reply, meta
         print("  ! 조건에 맞는 새 상품 없음 → 정보성 글로 대체")
         mode = "content"
 

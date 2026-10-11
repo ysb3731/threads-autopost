@@ -114,6 +114,13 @@ def content_prompt(acc, topic, recent, body_max):
 주제: {topic}"""
 
 
+def clean_name(name):
+    """판매자 광고 문구([...], (...))와 옵션 표기 제거"""
+    import re
+    name = re.sub(r"\[[^\]]*\]|【[^】]*】", "", name)
+    return re.sub(r"\s+", " ", name.split(",")[0]).strip()
+
+
 def coupang_prompt(acc, product, keyword, recent, body_max):
     recent_block = "\n".join(f"- {t[:80]}" for t in recent) or "(없음)"
     perks = []
@@ -128,7 +135,7 @@ def coupang_prompt(acc, product, keyword, recent, body_max):
 {acc.get('persona', '').strip()}
 
 [상품 정보 - 이 정보만 사용]
-- 상품명: {product['name']}
+- 상품명: {clean_name(product['name'])}
 - 검색 키워드: {keyword}
 - 카테고리: {product['category']}
 - 가격(조회 시점): {price}
@@ -140,7 +147,10 @@ def coupang_prompt(acc, product, keyword, recent, body_max):
 - 상품명에 없는 성능·성분·효과를 지어내지 말 것
 - 가격은 변동될 수 있으니 "현재 기준" 정도로만 언급하거나 생략
 - "링크 클릭", "지금 구매" 같은 직접 구매 유도 문구 금지
-- 마지막 줄은 "자세한 정보는 댓글에 남겨둘게요" 같은 자연스러운 한 문장
+- 계정 콘셉트 문장을 그대로 옮기지 말고 말투·관점에만 녹일 것 ("아이 둘 키우는 아빠로서" 같은 자기소개 금지)
+- 판매자 광고 문구를 따옴표로 인용하지 말 것
+- 글 마지막에 "댓글", "링크" 안내 문장은 쓰지 말 것 (시스템이 자동으로 붙임)
+- 문장은 반드시 완결된 형태로 끝낼 것
 
 [최근 게시글]
 {recent_block}
@@ -292,7 +302,9 @@ def build_post(cfg, acc, history):
         if product:
             text = ask_claude(cfg, coupang_prompt(acc, product, keyword, recent, body_max))
             tag = cfg.get("ad_tag", "#광고 #쿠팡파트너스")
-            text = f"{text[: THREADS_MAX_CHARS - len(tag) - 2].rstrip()}\n\n{tag}"
+            outro = acc["coupang"].get("outro", "자세한 정보는 댓글에 남겨둘게요 👇")
+            tail = f"\n\n{outro}\n{tag}"
+            text = f"{text[: THREADS_MAX_CHARS - len(tail)].rstrip()}{tail}"
             link = short_link(product)
             reply = f"{acc['coupang'].get('link_label', '👉 상품 보기')}\n{link}\n\n{cfg['disclosure']}"
             product = {**product, "url": link}

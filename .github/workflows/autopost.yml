@@ -1,0 +1,61 @@
+name: Threads 자동 게시
+
+on:
+  schedule:
+    - cron: "7 * * * *"        # 매시 7분 (UTC 기준, 시간 필터는 config.yaml의 active_hours_kst)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "1이면 게시하지 않고 생성 결과만 확인"
+        default: "1"
+      account:
+        description: "특정 계정만 실행 (비우면 전체)"
+        default: ""
+      mode:
+        description: "글 종류 고정: coupang / content (비우면 비율대로)"
+        default: ""
+
+permissions:
+  contents: write              # 게시 이력(history/) 커밋용
+
+concurrency:
+  group: autopost
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: 글 생성 및 게시
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          THREADS_USER_ID_1: ${{ secrets.THREADS_USER_ID_1 }}
+          THREADS_TOKEN_1: ${{ secrets.THREADS_TOKEN_1 }}
+          THREADS_USER_ID_2: ${{ secrets.THREADS_USER_ID_2 }}
+          THREADS_TOKEN_2: ${{ secrets.THREADS_TOKEN_2 }}
+          COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
+          COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
+          COUPANG_SUB_ID: threads
+          FORCE_MODE: ${{ inputs.mode }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || '0' }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+          ONLY_ACCOUNT: ${{ inputs.account }}
+        run: python autopost.py
+
+      - name: 게시 이력 저장
+        if: always()
+        run: |
+          git config user.name "autopost-bot"
+          git config user.email "autopost-bot@users.noreply.github.com"
+          git add history/ cache/ 2>/dev/null || git add history/
+          git diff --cached --quiet || (git commit -m "history: $(date -u +%FT%TZ)" && git push)

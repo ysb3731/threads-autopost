@@ -1,0 +1,22 @@
+name: Threads 토큰 자동 연장
+
+on:
+  schedule:
+    - cron: "0 0 1,15 * *"     # 매월 1일·15일 (토큰 유효기간 60일)
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pyyaml
+      - name: 토큰 연장 및 Secrets 갱신
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          THREADS_TOKEN_1: ${{ secrets.THREADS_TOKEN_1 }}
+          THREADS_TOKEN_2: ${{ secrets.THREADS_TOKEN_2 }}
+        run: python tools/refresh_tokens.py
